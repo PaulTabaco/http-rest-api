@@ -8,8 +8,9 @@ import (
 
 // Store ...
 type Store struct {
-	config *Config
-	db     *sql.DB
+	config         *Config
+	db             *sql.DB
+	userRepository *UserRepository
 }
 
 // New ...
@@ -40,4 +41,18 @@ func (s *Store) Open() error {
 // Close ...
 func (s *Store) Close() {
 	s.db.Close()
+}
+
+// User ...
+// for outer using user repository - store.User().Create() , .FindByEmail() ...
+func (s *Store) User() *UserRepository {
+	if s.userRepository != nil {
+		return s.userRepository
+	}
+
+	s.userRepository = &UserRepository{
+		store: s,
+	}
+
+	return s.userRepository
 }
