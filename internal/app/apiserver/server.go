@@ -1,26 +1,39 @@
 package apiserver
 
 import (
+	"encoding/json"
+	"errors"
 	"net/http"
+	"paulTabaco/http-rest-api/internal/app/model"
 	"paulTabaco/http-rest-api/internal/app/store"
 
 	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
+	"github.com/gorilla/sessions"
+)
+
+const (
+	sessionName = "myServerName"
+)
+
+var (
+	errIncorrectEmailOrPassord = errors.New("incorrect email or password")
 )
 
 type Server struct {
 	router *mux.Router
-	logger *logrus.Logger
-	store  store.Store
+	//logger       *logrus.Logger
+	store        store.Store
+	sessionStore sessions.Store
 }
 
-func newServer(store store.Store) *Server {
+func newServer(store store.Store, sessionStore sessions.Store) *Server {
 	s := &Server{
 		router: mux.NewRouter(),
-		logger: logrus.New(),
-		store:  store,
+		//logger:       logrus.New(),
+		store:        store,
+		sessionStore: sessionStore,
 	}
-	s.CongigureRouter()
+	s.configureRouter()
 
 	return s
 }
@@ -29,6 +42,86 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	s.router.ServeHTTP(rw, r)
 }
 
-func (s *Server) CongigureRouter() {
-	// ...
+func (s *Server) configureRouter() {
+	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST")
+	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST")
+}
+
+func (s *Server) handleUsersCreate() http.HandlerFunc {
+	type Request struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	return func(rw http.ResponseWriter, r *http.Request) {
+		req := &Request{}
+
+		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+			s.error(rw, r, http.StatusBadRequest, err)
+			return
+		}
+
+		u := &model.User{
+			Email:    req.Email,
+			Password: req.Password,
+		}
+
+		if err := s.store.User().Create(u); err != nil {
+			s.error(rw, r, http.StatusUnprocessableEntity, err)
+			return
+		}
+
+		u.Sanitize()
+
+		s.respond(rw, r, http.StatusCreated, u)
+	}
+}
+
+func (s *Server) handleSessionsCreate() http.HandlerFunc {
+	type Request struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	return func(rw http.ResponseWriter, r *http.Request) {
+		req := &Request{}
+
+		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+			s.error(rw, r, http.StatusBadRequest, err)
+			return
+		}
+
+		u, err := s.store.User().FindByEmail(req.Email)
+
+		if err != nil || !u.ComparePassword(req.Password) {
+			s.error(rw, r, http.StatusUnauthorized, errIncorrectEmailOrPassord)
+			return
+		}
+
+		session, err := s.sessionStore.Get(r, sessionName)
+		if err != nil {
+			s.error(rw, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		session.Values["user_id"] = u.ID
+		if err := s.sessionStore.Save(r, rw, session); err != nil {
+			s.error(rw, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		s.respond(rw, r, http.StatusOK, nil)
+	}
+
+}
+
+func (s *Server) error(rw http.ResponseWriter, r *http.Request, code int, err error) {
+	s.respond(rw, r, code, map[string]string{"error": err.Error()})
+}
+
+func (s *Server) respond(rw http.ResponseWriter, r *http.Request, code int, data interface{}) {
+	rw.WriteHeader(code)
+	if data != nil {
+		json.NewEncoder(rw).Encode(data)
+	}
 }
