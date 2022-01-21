@@ -28,6 +28,21 @@ func (r *UserRepository) Create(u *model.User) error {
 	).Scan(&u.ID)
 }
 
+// FindById ...
+func (r *UserRepository) FindById(id int) (*model.User, error) {
+	u := &model.User{}
+	if err := r.store.db.QueryRow(
+		"SELECT id, email, encrypted_password FROM users WHERE id = $1", id,
+	).Scan(&u.ID, &u.Email, &u.EncryptedPassword); err != nil { // Scan to fill returned u with id, email, EncryptedPassword
+		if err == sql.ErrNoRows {
+			return nil, store.ErrRecordNotFound
+		}
+		return nil, err
+	}
+
+	return u, nil
+}
+
 // FindByEmail ...
 func (r *UserRepository) FindByEmail(email string) (*model.User, error) {
 	u := &model.User{}
