@@ -8,6 +8,7 @@ import (
 	"paulTabaco/http-rest-api/internal/app/model"
 	"paulTabaco/http-rest-api/internal/app/store"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -16,6 +17,7 @@ import (
 const (
 	sessionName        = "myServerName"
 	ctxKeyUser  CtxKey = iota
+	ctxKeyRequestID
 )
 
 var (
@@ -49,6 +51,8 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) configureRouter() {
+	// Middlwares
+	s.router.Use(s.setRequestID)
 	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"}))) // add origins for relax* browsers (for all resourses) - (Access-Control-Allow-Origin: *)
 
 	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST")
@@ -57,7 +61,14 @@ func (s *Server) configureRouter() {
 	privateRouter := s.router.PathPrefix("/private").Subrouter() //subrouter for space for outhenticated only
 	privateRouter.Use(s.authenticateUser)
 	privateRouter.HandleFunc("/whoami", s.handleWhoami()).Methods("Get")
+}
 
+func (s *Server) setRequestID(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		id := uuid.New().String()
+		rw.Header().Set("X-Request-ID", id)
+		next.ServeHTTP(rw, r.WithContext(context.WithValue(r.Context(), ctxKeyRequestID, id)))
+	})
 }
 
 func (s *Server) authenticateUser(next http.Handler) http.Handler {
