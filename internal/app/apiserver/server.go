@@ -7,11 +7,13 @@ import (
 	"net/http"
 	"paulTabaco/http-rest-api/internal/app/model"
 	"paulTabaco/http-rest-api/internal/app/store"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -28,16 +30,16 @@ var (
 type CtxKey int8 // we use type here because it's good practice use special types istead simple (str or int)
 
 type Server struct {
-	router *mux.Router
-	//logger       *logrus.Logger
+	router       *mux.Router
+	logger       *logrus.Logger
 	store        store.Store
 	sessionStore sessions.Store
 }
 
 func newServer(store store.Store, sessionStore sessions.Store) *Server {
 	s := &Server{
-		router: mux.NewRouter(),
-		//logger:       logrus.New(),
+		router:       mux.NewRouter(),
+		logger:       logrus.New(),
 		store:        store,
 		sessionStore: sessionStore,
 	}
@@ -51,15 +53,15 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) configureRouter() {
-	// Middlwares
-	s.router.Use(s.setRequestID)
-	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"}))) // add origins for relax* browsers (for all resourses) - (Access-Control-Allow-Origin: *)
+	s.router.Use(s.setRequestID) // Middlware for set ID to each request
+	s.router.Use(s.logRequest)
+	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"}))) // Middlware adds origins for relax* browsers (for all resourses) - (Access-Control-Allow-Origin: *)
 
 	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST")
 	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST")
 
 	privateRouter := s.router.PathPrefix("/private").Subrouter() //subrouter for space for outhenticated only
-	privateRouter.Use(s.authenticateUser)
+	privateRouter.Use(s.authenticateUser)                        // Middlware check user by coockie
 	privateRouter.HandleFunc("/whoami", s.handleWhoami()).Methods("Get")
 }
 
@@ -68,6 +70,22 @@ func (s *Server) setRequestID(next http.Handler) http.Handler {
 		id := uuid.New().String()
 		rw.Header().Set("X-Request-ID", id)
 		next.ServeHTTP(rw, r.WithContext(context.WithValue(r.Context(), ctxKeyRequestID, id)))
+	})
+}
+
+func (s *Server) logRequest(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		logger := s.logger.WithFields(logrus.Fields{ //made own local logger with special fields
+			"remote_addr": r.RemoteAddr,
+			"request_id":  r.Context().Value(ctxKeyRequestID),
+		})
+		// Format - started time, Method, endpoint
+		logger.Infof("started %s %s", r.Method, r.RequestURI)
+
+		startTime := time.Now()
+		rwWithCode := &ResponseWriter{rw, http.StatusOK}
+		next.ServeHTTP(rwWithCode, r)
+		logger.Infof("completed with %d %s in %v", rwWithCode.code, http.StatusText(rwWithCode.code), time.Since(startTime))
 	})
 }
 
@@ -89,7 +107,6 @@ func (s *Server) authenticateUser(next http.Handler) http.Handler {
 			s.error(rw, r, http.StatusUnauthorized, errNotAuthenticated)
 			return
 		}
-		//next.ServeHTTP(rw, r)
 		next.ServeHTTP(rw, r.WithContext(context.WithValue(r.Context(), ctxKeyUser, u))) // new context = current context + added values
 	})
 }
