@@ -8,6 +8,7 @@ import (
 	"paulTabaco/http-rest-api/internal/app/model"
 	"paulTabaco/http-rest-api/internal/app/store"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 )
@@ -48,6 +49,8 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) configureRouter() {
+	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"}))) // add origins for relax* browsers (for all resourses) - (Access-Control-Allow-Origin: *)
+
 	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST")
 	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST")
 
