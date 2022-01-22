@@ -19,7 +19,7 @@ const (
 
 var (
 	errIncorrectEmailOrPassord = errors.New("incorrect email or password")
-	errNotAuthenticated        = errors.New("Not authenticated")
+	errNotAuthenticated        = errors.New("not authenticated")
 )
 
 type CtxKey int8 // we use type here because it's good practice use special types istead simple (str or int)
@@ -50,6 +50,11 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 func (s *Server) configureRouter() {
 	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST")
 	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST")
+
+	privateRouter := s.router.PathPrefix("/private").Subrouter() //subrouter for space for outhenticated only
+	privateRouter.Use(s.authenticateUser)
+	privateRouter.HandleFunc("/whoami", s.handleWhoami()).Methods("Get")
+
 }
 
 func (s *Server) authenticateUser(next http.Handler) http.Handler {
@@ -73,6 +78,12 @@ func (s *Server) authenticateUser(next http.Handler) http.Handler {
 		//next.ServeHTTP(rw, r)
 		next.ServeHTTP(rw, r.WithContext(context.WithValue(r.Context(), ctxKeyUser, u))) // new context = current context + added values
 	})
+}
+
+func (s *Server) handleWhoami() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		s.respond(rw, r, http.StatusOK, r.Context().Value(ctxKeyUser).(*model.User))
+	}
 }
 
 func (s *Server) handleUsersCreate() http.HandlerFunc {
