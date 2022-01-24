@@ -31,14 +31,12 @@ func TestUserRepository_FindById(t *testing.T) {
 
 func TestUserRepository_FindByEmail(t *testing.T) {
 	s := teststore.New()
-	email := "nonExistinginDB@mail.org"
-	_, err := s.UserRep().FindByEmail(email)
+	u1 := model.TestUser1(t)
+	_, err := s.UserRep().FindByEmail(u1.Email)
 	assert.EqualError(t, err, store.ErrRecordNotFound.Error())
 
-	u := model.TestUser1(t)
-	u.Email = email
-	s.UserRep().Create(u)
-	u, err = s.UserRep().FindByEmail(email)
+	s.UserRep().Create(u1)
+	u2, err := s.UserRep().FindByEmail(u1.Email)
 	assert.NoError(t, err)
-	assert.NotNil(t, u)
+	assert.NotNil(t, u2)
 }

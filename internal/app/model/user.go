@@ -10,8 +10,8 @@ import (
 type User struct {
 	ID                int    `json:"id"`
 	Email             string `json:"email"`
-	Password          string `json:"password, omitempty"` // omitempty - if empty - do not return
-	EncryptedPassword string `json:"-"`                   // - do not render
+	Password          string `json:"password,omitempty"` // omitempty - if empty - do not return
+	EncryptedPassword string `json:"-"`                  // - do not render
 }
 
 // Validate ...
@@ -21,6 +21,7 @@ func (u *User) Validate() error {
 		u,
 		validation.Field(&u.Email, validation.Required, is.Email),
 		//validation.Field(&u.Password, validation.Required, validation.Length(6, 100)),
+
 		// instead of password Required we should use custom validator. Becouse we need the field when create, but don't need in other cases
 		// requiredIf - custom validator. validate if EncryptedPassword == ""
 		validation.Field(&u.Password, validation.By(requiredIf(u.EncryptedPassword == "")), validation.Length(6, 100)),

@@ -1,6 +1,6 @@
 package store
 
-// Store ...
-type Store interface {
-	UserRep() UserRepository
+// StoreInterface ...
+type StoreInterface interface {
+	UserRep() UserRepositoryInterface
 }

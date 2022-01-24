@@ -1,0 +1,82 @@
+Useful info for testing with httpPie
+
+//===
+http POST http://localhost:8080/users
+
+{
+    "error": "EOF"
+}
+
+//==
+http POST http://localhost:8080/users email=invalid
+{
+    "error": "email: must be a valid email address; password: cannot be blank."
+}
+
+//==
+http POST http://localhost:8080/users email=qq@qq.com password=123
+{
+    "error": "password: the length must be between 6 and 100."
+}
+
+//==
+
+http POST http://localhost:8080/users email=qq@qq.com password=1234567
+{
+    "email": "qq@qq.com",
+    "id": 2
+}
+
+//==
+http POST http://localhost:8080/sessions email=qq@qq.com password=1234567
+
+HTTP/1.1 200 OK
+Content-Length: 0
+Date: Mon, 24 Jan 2022 06:37:03 GMT
+Set-Cookie: myServerName=MTY0MzAwNjIyM3xEdi1CQkFFQ180SUFBUkFCRUFBQUh2LUNBQUVHYzNSeWFXNW5EQWtBQjNWelpYSmZhV1FEYVc1MEJBSUFCQT09fI8n_ALRdVcqAH9wpPGITjFU2j3_DKJl1ziyv-8G6SXb; Path=/; Expires=Wed, 23 Feb 2022 06:37:03 GMT; Max-Age=2592000
+X-Request-Id: 26b0f094-1564-43ef-9fe6-89c55e02b64d
+
+//== (cookie saved to user) ==
+http -v --session=user POST http://localhost:8080/sessions email=qq@qq.com password=1234567
+
+POST /sessions HTTP/1.1
+Accept: application/json, */*;q=0.5
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Content-Length: 45
+Content-Type: application/json
+Cookie: myServerName=MTY0MjgxMDY5MnxEdi1CQkFFQ180SUFBUkFCRUFBQUh2LUNBQUVHYzNSeWFXNW5EQWtBQjNWelpYSmZhV1FEYVc1MEJBSUFBZz09fIBux6MLR3cwquVIz5wMyr8Z_utrLYemHSbHA5EMqp9N
+Host: localhost:8080
+Origin: google.com
+User-Agent: HTTPie/2.6.0
+
+{
+    "email": "qq@qq.com",
+    "password": "1234567"
+}
+
+// ==
+http -v --session=user http://localhost:8080/private/whoami 
+
+GET /private/whoami HTTP/1.1
+Accept: application/json, */*;q=0.5
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Cookie: myServerName=MTY0MzAzNjc5N3xEdi1CQkFFQ180SUFBUkFCRUFBQUh2LUNBQUVHYzNSeWFXNW5EQWtBQjNWelpYSmZhV1FEYVc1MEJBSUFCQT09fMe_KGHINCqqa6HqZqn8sPgIksEPumB6sTrs9i3SWLV_
+Host: localhost:8080
+Origin: google.com
+User-Agent: HTTPie/2.6.0
+
+
+
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+Content-Length: 29
+Content-Type: text/plain; charset=utf-8
+Date: Mon, 24 Jan 2022 15:07:37 GMT
+X-Request-Id: f5e522d8-b4a2-43de-8e8c-2b352b46d469
+
+{
+    "email": "qq@qq.com",
+    "id": 2
+}

@@ -32,11 +32,11 @@ type CtxKey int8 // we use type here because it's good practice use special type
 type Server struct {
 	router       *mux.Router
 	logger       *logrus.Logger
-	store        store.Store
+	store        store.StoreInterface
 	sessionStore sessions.Store
 }
 
-func newServer(store store.Store, sessionStore sessions.Store) *Server {
+func newServer(store store.StoreInterface, sessionStore sessions.Store) *Server {
 	s := &Server{
 		router:       mux.NewRouter(),
 		logger:       logrus.New(),
@@ -60,7 +60,7 @@ func (s *Server) configureRouter() {
 	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST")
 	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST")
 
-	privateRouter := s.router.PathPrefix("/private").Subrouter() //subrouter for space for outhenticated only
+	privateRouter := s.router.PathPrefix("/private").Subrouter() // subrouter for space for outhenticated only
 	privateRouter.Use(s.authenticateUser)                        // Middlware check user by coockie
 	privateRouter.HandleFunc("/whoami", s.handleWhoami()).Methods("Get")
 }
@@ -118,13 +118,13 @@ func (s *Server) handleWhoami() http.HandlerFunc {
 }
 
 func (s *Server) handleUsersCreate() http.HandlerFunc {
-	type Request struct {
+	type request struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
 
 	return func(rw http.ResponseWriter, r *http.Request) {
-		req := &Request{}
+		req := &request{}
 
 		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 			s.error(rw, r, http.StatusBadRequest, err)
@@ -148,13 +148,13 @@ func (s *Server) handleUsersCreate() http.HandlerFunc {
 }
 
 func (s *Server) handleSessionsCreate() http.HandlerFunc {
-	type Request struct {
+	type request struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
 
 	return func(rw http.ResponseWriter, r *http.Request) {
-		req := &Request{}
+		req := &request{}
 
 		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 			s.error(rw, r, http.StatusBadRequest, err)
