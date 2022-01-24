@@ -102,7 +102,7 @@ func (s *Server) authenticateUser(next http.Handler) http.Handler {
 			s.error(rw, r, http.StatusUnauthorized, errNotAuthenticated)
 			return
 		}
-		u, err := s.store.User().FindById(id.(int))
+		u, err := s.store.UserRep().FindById(id.(int))
 		if err != nil {
 			s.error(rw, r, http.StatusUnauthorized, errNotAuthenticated)
 			return
@@ -136,7 +136,7 @@ func (s *Server) handleUsersCreate() http.HandlerFunc {
 			Password: req.Password,
 		}
 
-		if err := s.store.User().Create(u); err != nil {
+		if err := s.store.UserRep().Create(u); err != nil {
 			s.error(rw, r, http.StatusUnprocessableEntity, err)
 			return
 		}
@@ -161,7 +161,7 @@ func (s *Server) handleSessionsCreate() http.HandlerFunc {
 			return
 		}
 
-		u, err := s.store.User().FindByEmail(req.Email)
+		u, err := s.store.UserRep().FindByEmail(req.Email)
 
 		if err != nil || !u.ComparePassword(req.Password) {
 			s.error(rw, r, http.StatusUnauthorized, errIncorrectEmailOrPassord)

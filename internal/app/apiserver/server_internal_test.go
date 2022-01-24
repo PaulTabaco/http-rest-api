@@ -16,9 +16,9 @@ import (
 )
 
 func TestServer_AuthenticateUser(t *testing.T) {
-	u := model.TestUser(t)
+	u := model.TestUser1(t)
 	store := teststore.New()
-	store.User().Create(u)
+	store.UserRep().Create(u)
 
 	testCases := []struct {
 		name         string
@@ -105,9 +105,9 @@ func TestServer_HandleUsersCreate(t *testing.T) {
 
 func TestServer_HandleSessionsCreate(t *testing.T) {
 
-	u := model.TestUser(t)
+	u := model.TestUser1(t)
 	store := teststore.New()
-	store.User().Create(u)
+	store.UserRep().Create(u)
 
 	srv := newServer(store, sessions.NewCookieStore([]byte("secret")))
 

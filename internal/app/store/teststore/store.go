@@ -17,7 +17,7 @@ func New() *Store {
 
 // User ...
 // for outer using user repository - store.User().Create() , .FindByEmail() ...
-func (s *Store) User() store.UserRepository {
+func (s *Store) UserRep() store.UserRepository {
 	if s.userRepository != nil {
 		return s.userRepository
 	}

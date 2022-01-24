@@ -24,7 +24,7 @@ func main() {
 
 	config := apiserver.NewConfig()
 
-	_, err := toml.DecodeFile(configPath, config) // Read config file and set vars
+	_, err := toml.DecodeFile(configPath, config) // Read config file and set vars to config
 	if err != nil {
 		log.Fatal(err)
 	}

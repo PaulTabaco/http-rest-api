@@ -2,6 +2,8 @@ package apiserver
 
 import "net/http"
 
+/// Custom ResponseWriter extended with extra field code
+
 type ResponseWriter struct {
 	// unonimous field - let us use do not release all methods in ResponseWriter; they will be accessable
 	http.ResponseWriter
