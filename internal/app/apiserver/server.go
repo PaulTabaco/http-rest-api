@@ -57,7 +57,7 @@ func (s *Server) configureRouter() {
 	s.router.Use(s.logRequest)
 	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"}))) // Middlware adds origins for relax* browsers (for all resourses) - (Access-Control-Allow-Origin: *)
 
-	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST")
+	s.router.HandleFunc("/createuser", s.handleUsersCreate()).Methods("POST")
 	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST")
 
 	privateRouter := s.router.PathPrefix("/private").Subrouter() // subrouter for space for outhenticated only

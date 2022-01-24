@@ -94,7 +94,7 @@ func TestServer_HandleUsersCreate(t *testing.T) {
 			rec := httptest.NewRecorder()
 			b := &bytes.Buffer{}
 			json.NewEncoder(b).Encode(tc.payload)
-			req, _ := http.NewRequest(http.MethodPost, "/users", b)
+			req, _ := http.NewRequest(http.MethodPost, "/createuser", b)
 
 			srv.ServeHTTP(rec, req)
 			assert.Equal(t, tc.expectedCode, rec.Code)

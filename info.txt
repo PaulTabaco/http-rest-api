@@ -1,27 +1,27 @@
 Useful info for testing with httpPie
 
 //===
-http POST http://localhost:8080/users
+http POST http://localhost:8080/createuser
 
 {
     "error": "EOF"
 }
-
+createuser
 //==
-http POST http://localhost:8080/users email=invalid
+http POST http://localhost:8080/createuser email=invalid
 {
     "error": "email: must be a valid email address; password: cannot be blank."
 }
 
 //==
-http POST http://localhost:8080/users email=qq@qq.com password=123
+http POST http://localhost:8080/createuser email=qq@qq.com password=123
 {
     "error": "password: the length must be between 6 and 100."
 }
 
 //==
 
-http POST http://localhost:8080/users email=qq@qq.com password=1234567
+http POST http://localhost:8080/createuser email=qq@qq.com password=1234567
 {
     "email": "qq@qq.com",
     "id": 2
